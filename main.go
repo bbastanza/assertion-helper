@@ -21,11 +21,10 @@ func main() {
 		fmt.Scanf("%s", &className)
 
 		if len(className) != 0 {
+			fmt.Println("")
 			break
 		}
 	}
-
-	fmt.Println("")
 
 	pattern := "class " + className
 
@@ -37,6 +36,12 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("Error running ripgrep")
+		return
+	}
+
+	if !containsChar(string(res), ':') {
+		fmt.Printf("No file class found")
+		return
 	}
 
 	filePath := string(res)[:strings.Index(res, ":")]
@@ -45,34 +50,46 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("Error opening filepath")
+		return
 	}
 
+	// create a new scanner with our file
 	scanner := bufio.NewScanner(file)
 
 	propCount := 0
+
 	for scanner.Scan() {
+		// get the last scanned line
 		t := scanner.Text()
-		if containsString(t, "public") && !containsString(t, "class") {
+
+		isProp := containsString(t, "public") &&
+			!containsString(t, "class") && // this will rule out the class decloration
+			!arrContainsChar(strings.Split(t, " "), '(') // this will rule out methods
+
+		if isProp {
+			// split our the stdout line and remove any whitespace characters/strings
 			arr := strings.Split(t, " ")
 			arr = removeEmpty(arr)
 
-			if len(arr) > 2 {
-				idx := indexOf(arr, "public")
-
-				if idx+2 > len(arr) {
-					continue
-				}
-
-				propName := arr[idx+2]
-
-				assertion := "Assert.Equal(one." + propName + ", two." + propName + ");"
-
-				fmt.Println(assertion)
-
-				propCount++
+			// we are looking for the idx + 2, so if we only have two continue
+			if len(arr) <= 2 {
+				continue
 			}
+
+			// get our index
+			idx := indexOf(arr, "public")
+
+			// get our property name which is two over from public
+			// public sting PropertyName { get; set; }
+			propName := arr[idx+2]
+
+			assertion := "Assert.Equal(one." + propName + ", two." + propName + ");"
+
+			fmt.Println(assertion)
+
+			propCount++
 		}
-	}
+	} // End loop
 
 	fmt.Printf("\nFound and created %d Assertions", propCount)
 }
@@ -87,8 +104,8 @@ func indexOf(arr []string, pattern string) int {
 
 	return -1
 }
-func containsString(s string, pattern string) bool {
 
+func containsString(s string, pattern string) bool {
 	arr := strings.Split(s, " ")
 
 	for _, v := range arr {
@@ -96,6 +113,29 @@ func containsString(s string, pattern string) bool {
 			return true
 		}
 	}
+
+	return false
+}
+
+func containsChar(s string, r rune) bool {
+	for _, v := range s {
+		if v == r {
+			return true
+		}
+	}
+
+	return false
+}
+
+func arrContainsChar(arr []string, r rune) bool {
+	for _, v := range arr {
+		for _, x := range v {
+			if x == r {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
