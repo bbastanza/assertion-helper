@@ -62,11 +62,10 @@ func Program() {
 
 	propCount := 0
 
-	// TODO we need to start at the line that conains the className
-	// and then end at the next className
-
+	// dont start building assertions until we find "public class *className"
 	startProps := false
 	for scanner.Scan() {
+
 		// get the last scanned line
 		t := scanner.Text()
 
@@ -181,36 +180,30 @@ func RemoveEmpty(arr []string) []string {
 	return output
 }
 
-func IsSubstring(s string, sub string) bool {
+func IsSubstring(str string, sub string) bool {
 
 Outer:
-	for i, v := range s {
+	for i, v := range str {
 
-		// find where the first char of the sub matchings
+		// if the first letters don't match keep looping through partent
 		if string(v) != string(sub[0]) {
 			continue
 		}
 
 		// chop off any thing before the substring started
-		start := s[i:]
+		adjustedStr := str[i:]
 
 		// cannot have a substring longer than the parent
-		if len(start) < len(sub) {
+		if len(adjustedStr) < len(sub) {
 			return false
 		}
 
 		// start the loop and compare
-		for i, v := range start {
-
-			//if the substring is done we are done
-			if i > len(sub)-1 {
-				return true
-			}
+		for i, v := range adjustedStr {
 
 			// if two characters at the same don't match we don't have a substring
 			if string(v) != string(sub[i]) {
 				continue Outer
-				// return false
 			}
 		}
 
