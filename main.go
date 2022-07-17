@@ -125,7 +125,7 @@ func main() {
 			// public sting PropertyName { get; set; }
 			propName := arr[idx+2]
 
-			assertion := "Assert.Equal(one." + propName + ", two." + propName + ");"
+			assertion := "Assert.Equal(expected." + propName + ", result." + propName + ");"
 
 			// assertion = ""
 			fmt.Println(assertion)
