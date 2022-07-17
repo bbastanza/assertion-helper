@@ -12,6 +12,27 @@ import (
 // loop through class file starting at (if line contains class XClass start creating assertions)
 // print out all the assertions
 
+func startCompare(s string, sub string) bool {
+
+	substringLength := len(sub)
+
+	if len(s) < substringLength {
+		return false
+	}
+
+	for i, v := range s {
+		if i > len(sub)-1 {
+			break
+		}
+
+		if string(v) != string(sub[i]) {
+			return false
+		}
+	}
+
+	return true
+}
+
 func main() {
 	var className string
 
@@ -26,7 +47,7 @@ func main() {
 		}
 	}
 
-	pattern := "class " + className
+	pattern := "public class " + className
 
 	rgCmd := exec.Command("/usr/bin/rg", pattern, "/home/stanzu10/Repos/repos2/Bridge/")
 
@@ -58,12 +79,33 @@ func main() {
 
 	propCount := 0
 
+	// TODO we need to start at the line that conains the className
+	// and then end at the next className
+
+	startProps := false
 	for scanner.Scan() {
 		// get the last scanned line
 		t := scanner.Text()
 
+		if isSubstring(t, "public class "+className) {
+			startProps = true
+			continue
+		}
+
+		if !startProps {
+			continue
+		}
+
+		// if we get here we are on the second class and can break
+		if isSubstring(t, "public class") {
+			break
+		}
+
+		// TODO make this into its own function and have a list of all C# keywords
+		// TODO maybe only for primitive types ie. string, int, char, decimal, float
 		isProp := containsString(t, "public") &&
 			!containsString(t, "class") && // this will rule out the class decloration
+			!containsString(t, "enum") && // this will rule out enums
 			!arrContainsChar(strings.Split(t, " "), '(') // this will rule out methods
 
 		if isProp {
@@ -85,6 +127,7 @@ func main() {
 
 			assertion := "Assert.Equal(one." + propName + ", two." + propName + ");"
 
+			// assertion = ""
 			fmt.Println(assertion)
 
 			propCount++
@@ -106,6 +149,7 @@ func indexOf(arr []string, pattern string) int {
 }
 
 func containsString(s string, pattern string) bool {
+
 	arr := strings.Split(s, " ")
 
 	for _, v := range arr {
@@ -149,4 +193,19 @@ func removeEmpty(arr []string) []string {
 	}
 
 	return output
+}
+
+// TODO this isn't 100 percent correct because it is checking for the first letter
+// so if it appears before the substring starts we have a problem
+// for this use case it's probably okay though because we are looking for "public class"
+func isSubstring(s string, sub string) bool {
+
+	for i, v := range s {
+
+		if string(v) == string(sub[0]) {
+			return startCompare(s[i:], sub)
+		}
+	}
+
+	return false
 }
