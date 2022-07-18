@@ -2,15 +2,19 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-// if the more than one class is found give an option which namespace (find the namespace somehow)
-// loop through class file starting at (if line contains class XClass start creating assertions)
-// print out all the assertions
+// TODO if the more than one class is found give an option which namespace (find the namespace somehow)
+
+type Config struct {
+	ProjectRoot string `json:"project_root"`
+}
 
 func main() {
 	Program()
@@ -30,9 +34,18 @@ func Program() {
 		}
 	}
 
+	config, err := GetConfig()
+
+	if err != nil {
+		fmt.Println("Error getting config ", err)
+		return
+	}
+
 	pattern := "public class " + className
 
-	rgCmd := exec.Command("/usr/bin/rg", pattern, "/home/stanzu10/Repos/repos2/Bridge/")
+	fmt.Println(config.ProjectRoot)
+
+	rgCmd := exec.Command("/usr/bin/rg", pattern, config.ProjectRoot)
 
 	result, err := rgCmd.CombinedOutput()
 
@@ -104,7 +117,7 @@ func Program() {
 			idx := IndexOf(arr, "public")
 
 			// get our property name which is two over from public
-			// public sting PropertyName { get; set; }
+			//      public sting PropertyName { get; set; }
 			propName := arr[idx+2]
 
 			assertion := "Assert.Equal(expected." + propName + ", result." + propName + ");"
@@ -156,6 +169,7 @@ func ContainsChar(s string, r rune) bool {
 func ArrContainsChar(arr []string, r rune) bool {
 	// loop through the array
 	for _, v := range arr {
+
 		// loop through each string in the array
 		for _, x := range v {
 			if x == r {
@@ -201,6 +215,11 @@ Outer:
 		// start the loop and compare
 		for i, v := range adjustedStr {
 
+			//if the substring is done we are done
+			if i > len(sub)-1 {
+				return true
+			}
+
 			// if two characters at the same don't match we don't have a substring
 			if string(v) != string(sub[i]) {
 				continue Outer
@@ -211,4 +230,20 @@ Outer:
 	}
 
 	return false
+}
+
+func GetConfig() (Config, error) {
+	configPath := "./config.json"
+
+	config, err := ioutil.ReadFile(configPath)
+
+	if err != nil {
+		return Config{}, err
+	}
+
+	data := Config{}
+
+	json.Unmarshal([]byte(config), &data)
+
+	return data, nil
 }
