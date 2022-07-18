@@ -10,17 +10,26 @@ import (
 	"strings"
 )
 
-// TODO if the more than one class is found give an option which namespace (find the namespace somehow)
-
 type Config struct {
 	ProjectRoot string `json:"project_root"`
 }
+
+// TODO if the more tha one class is found give an option which namespace (find the namespace somehow)
+// TODO test Program
+// TODO refactor isProp
 
 func main() {
 	Program()
 }
 
 func Program() {
+	config, err := GetConfig()
+
+	if err != nil {
+		fmt.Println("Error getting config ", err)
+		return
+	}
+
 	var className string
 
 	fmt.Println("Enter Class Name")
@@ -34,16 +43,7 @@ func Program() {
 		}
 	}
 
-	config, err := GetConfig()
-
-	if err != nil {
-		fmt.Println("Error getting config ", err)
-		return
-	}
-
 	pattern := "public class " + className
-
-	fmt.Println(config.ProjectRoot)
 
 	rgCmd := exec.Command("/usr/bin/rg", pattern, config.ProjectRoot)
 
